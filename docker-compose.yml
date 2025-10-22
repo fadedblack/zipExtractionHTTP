@@ -1,0 +1,23 @@
+version: '3.8'
+services:
+  localstack:
+    image: localstack/localstack
+    container_name: localstack_java_http
+    environment:
+      - LOCALSTACK_SERVICES=s3
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+    ports:
+      - "4566:4566"
+    volumes:
+      - localstack_java_http_data:/var/lib/localstack
+      - ./init-s3.py:/etc/localstack/init/ready.d/init-s3.py
+      - ./agreements.zip:/build/tmp/agreements.zip
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:4566/_localstack/health" ]
+      interval: 30s
+      retries: 3
+      start_period: 10s
+volumes:
+  localstack_java_http_data:
