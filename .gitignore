@@ -43,3 +43,4 @@ zip_contents/
 .gitattributes
 gradle-wrapper.jar
 src/main/java/com/http/request/RequestApplication.java
+output/

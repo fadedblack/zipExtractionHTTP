@@ -5,21 +5,30 @@ import com.http.request.exceptions.ZipExtractionException;
 import com.http.request.exceptions.ZipHttpException;
 import com.http.request.http.ZipHttpClient;
 import com.http.request.models.CentralDirectoryInfo;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
+import java.util.zip.ZipInputStream;
+
+import com.http.request.processors.StreamProcessorInterface;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public final class ZipExtraction {
     private final String zipUrl;
     private final ZipHttpClient zipHttpClient;
+    private final List<CentralDirectoryInfo> centralDirectoryInfos = new ArrayList<>();
 
     public ZipExtraction(String zipUrl) {
         if (zipUrl == null || zipUrl.isBlank()) {
@@ -134,7 +143,12 @@ public final class ZipExtraction {
             offset = nameEnd + extraLen + commentLen;
         }
         log.info("-----------------------------------------");
+        setCentralDirectoryInfos(entries);
         return entries;
+    }
+
+    private void setCentralDirectoryInfos(List<CentralDirectoryInfo> entries) {
+        this.centralDirectoryInfos.addAll(entries);
     }
 
     private byte[] fetchFileBytesFromZip(CentralDirectoryInfo centralDirectoryInfo) throws ZipHttpException {
@@ -221,7 +235,7 @@ public final class ZipExtraction {
                 Inflater inflater = new Inflater(true);
                 inflater.setInput(compressedData);
                 byte[] buffer = new byte[ZipExtractionConfig.DECOMPRESSION_BUFFER_SIZE];
-                java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 while (!inflater.finished()) {
                     int count = inflater.inflate(buffer);
                     if (count == 0 && inflater.needsInput()) {
@@ -278,8 +292,8 @@ public final class ZipExtraction {
         return result;
     }
 
-    public List<Byte> getFile(List<CentralDirectoryInfo> centralDirectoryContents, String filename) {
-        CentralDirectoryInfo centralDirectoryInfo = centralDirectoryContents.stream()
+    public List<Byte> getFile(String filename) {
+        CentralDirectoryInfo centralDirectoryInfo = centralDirectoryInfos.stream()
                 .filter(x -> x.getFileName().equals(filename))
                 .findFirst()
                 .orElseThrow(
@@ -301,5 +315,41 @@ public final class ZipExtraction {
             log.error("Error extracting file {}: {}", filename, e.getMessage(), e);
             return Collections.emptyList();
         }
+    }
+
+    public void streamFrom(String filename, StreamProcessorInterface processor) throws IOException, ZipHttpException, InterruptedException {
+        InputStream inputStream = createInputStreamFromFile(filename);
+        try {
+            readFileFromStream(inputStream, processor);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void readFileFromStream(InputStream inputStream, StreamProcessorInterface processor) throws IOException {
+        ZipInputStream zipInputStream = new ZipInputStream(inputStream);
+        ZipEntry entry;
+
+        while ((entry = zipInputStream.getNextEntry()) != null) {
+                try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+                    byte[] buffer = new byte[8192];
+                    int bytesRead;
+                    while ((bytesRead = zipInputStream.read(buffer)) != -1) {
+                        byteArrayOutputStream.write(buffer, 0, bytesRead);
+                    }
+                    processor.processStream(byteArrayOutputStream.toByteArray(), entry.getName());
+                } catch (IOException e) {
+                    log.error("Error reading from ZIP stream: " + e.getMessage(), e);
+            }
+        }
+
+    }
+
+    private InputStream createInputStreamFromFile(String filename) throws ZipHttpException, IOException, InterruptedException {
+        CentralDirectoryInfo centralDirectoryInfo = centralDirectoryInfos.stream().filter(x -> x.getFileName().equals(filename)).findFirst().orElseThrow(() -> {
+            throw new IllegalArgumentException("File " + filename + " not found in central directory");
+        });
+
+        return zipHttpClient.fetchStreamFromOffset(zipUrl, centralDirectoryInfo.getLocalHeaderOffset());
     }
 }

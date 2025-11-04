@@ -3,6 +3,7 @@ package com.http.request.http;
 import com.http.request.config.ZipExtractionConfig;
 import com.http.request.exceptions.ZipHttpException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -48,6 +49,18 @@ public class ZipHttpClient {
         String rangeHeader = String.format("bytes=%d-%d", offset, rangeEnd);
         log.info("Fetching {} bytes with {} safety buffer at offset {} from URL: {}", size, safetyBuffer, offset, url);
         return fetchRangeBytes(url, rangeHeader);
+    }
+
+    public InputStream fetchStreamFromOffset(String url, long offset) throws IOException, InterruptedException {
+        String rangeHeader = String.format("bytes=%d-", offset);
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Range", rangeHeader)
+                .timeout(Duration.ofSeconds(ZipExtractionConfig.REQUEST_TIMEOUT_SECONDS))
+                .GET()
+                .build();
+
+        return httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream()).body();
     }
 
     private byte[] fetchRangeBytes(String url, String rangeHeader) throws ZipHttpException {
