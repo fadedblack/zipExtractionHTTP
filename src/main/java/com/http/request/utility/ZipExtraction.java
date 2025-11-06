@@ -10,8 +10,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -293,11 +291,7 @@ public final class ZipExtraction {
     }
 
     public List<Byte> getFile(String filename) {
-        CentralDirectoryInfo centralDirectoryInfo = centralDirectoryInfos.stream()
-                .filter(x -> x.getFileName().equals(filename))
-                .findFirst()
-                .orElseThrow(
-                        () -> new IllegalArgumentException("File " + filename + " not found in central directory"));
+        CentralDirectoryInfo centralDirectoryInfo = getCentralDirectoryInfoFromFileName(filename);
 
         try {
             byte[] allBytes = fetchFileBytesFromZip(centralDirectoryInfo);
@@ -337,19 +331,24 @@ public final class ZipExtraction {
                     while ((bytesRead = zipInputStream.read(buffer)) != -1) {
                         byteArrayOutputStream.write(buffer, 0, bytesRead);
                     }
+                    //@Refactor: Can change the entry to return the CentralDirectoryInfo if needed
                     processor.processStream(byteArrayOutputStream.toByteArray(), entry.getName());
                 } catch (IOException e) {
-                    log.error("Error reading from ZIP stream: " + e.getMessage(), e);
+                    log.error("Error reading from ZIP stream: {}", e.getMessage(), e);
             }
         }
 
     }
 
-    private InputStream createInputStreamFromFile(String filename) throws ZipHttpException, IOException, InterruptedException {
-        CentralDirectoryInfo centralDirectoryInfo = centralDirectoryInfos.stream().filter(x -> x.getFileName().equals(filename)).findFirst().orElseThrow(() -> {
-            throw new IllegalArgumentException("File " + filename + " not found in central directory");
-        });
+    private InputStream createInputStreamFromFile(String filename) throws IOException, InterruptedException {
+        return zipHttpClient.fetchStreamFromOffset(zipUrl, getCentralDirectoryInfoFromFileName(filename).getLocalHeaderOffset());
+    }
 
-        return zipHttpClient.fetchStreamFromOffset(zipUrl, centralDirectoryInfo.getLocalHeaderOffset());
+    private CentralDirectoryInfo getCentralDirectoryInfoFromFileName(String filename) {
+        return centralDirectoryInfos.stream()
+                .filter(x -> x.getFileName().equals(filename))
+                .findFirst()
+                .orElseThrow(
+                        () -> new IllegalArgumentException("File " + filename + " not found in central directory"));
     }
 }
