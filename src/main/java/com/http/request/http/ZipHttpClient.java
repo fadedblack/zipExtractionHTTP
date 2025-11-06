@@ -60,7 +60,9 @@ public class ZipHttpClient {
                 .GET()
                 .build();
 
-        return httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream()).body();
+        return httpClient
+                .send(request, HttpResponse.BodyHandlers.ofInputStream())
+                .body();
     }
 
     private byte[] fetchRangeBytes(String url, String rangeHeader) throws ZipHttpException {

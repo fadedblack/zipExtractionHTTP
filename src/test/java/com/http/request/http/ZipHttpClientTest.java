@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -37,7 +36,7 @@ class ZipHttpClientTest {
     }
 
     @Test
-    void testFetchLastBytes_Success() throws Exception {
+    void shouldFetchLastBytesSuccessfullyWhenCustomConfigIsUsed() throws Exception {
         // This test requires mocking the internal HttpClient creation
         // For now, we'll focus on integration-style testing of the public API
 
@@ -50,7 +49,7 @@ class ZipHttpClientTest {
     }
 
     @Test
-    void testConstructorWithNullParameters() {
+    void shouldNotThrowExceptionWhenConstructorsAreUsedWithNullOrEdgeParameters() {
         // Test default constructor
         assertDoesNotThrow(() -> new ZipHttpClient());
 
@@ -63,7 +62,7 @@ class ZipHttpClientTest {
     }
 
     @Test
-    void testFetchLastBytes_InvalidUrl() {
+    void shouldThrowIllegalArgumentExceptionWhenFetchLastBytesWithInvalidUrl() {
         // Test with invalid URL - URI.create() throws IllegalArgumentException for malformed URLs
         assertThrows(IllegalArgumentException.class, () -> {
             zipHttpClient.fetchLastBytes("invalid-url", 1024);
@@ -71,7 +70,7 @@ class ZipHttpClientTest {
     }
 
     @Test
-    void testFetchBytesAtOffset_InvalidUrl() {
+    void shouldThrowIllegalArgumentExceptionWhenFetchBytesAtOffsetWithInvalidUrl() {
         // Test with invalid URL - URI.create() throws IllegalArgumentException for malformed URLs
         assertThrows(IllegalArgumentException.class, () -> {
             zipHttpClient.fetchBytesAtOffset("invalid-url", 0, 1024);
@@ -79,7 +78,7 @@ class ZipHttpClientTest {
     }
 
     @Test
-    void testFetchBytesWithSafetyBuffer_InvalidUrl() {
+    void shouldThrowIllegalArgumentExceptionWhenFetchBytesWithSafetyBufferWithInvalidUrl() {
         // Test with invalid URL - URI.create() throws IllegalArgumentException for malformed URLs
         assertThrows(IllegalArgumentException.class, () -> {
             zipHttpClient.fetchBytesWithSafetyBuffer("invalid-url", 0, 1024, 512);
@@ -87,13 +86,13 @@ class ZipHttpClientTest {
     }
 
     @Test
-    void testClose() {
+    void shouldNotThrowExceptionWhenCloseIsCalled() {
         // Test that close doesn't throw exceptions
         assertDoesNotThrow(() -> zipHttpClient.close());
     }
 
     @Test
-    void testRangeHeaderFormats() {
+    void shouldVerifyRangeHeaderFormatsWhenTested() {
         // This test verifies the range header format logic would be correct
         // We can't directly test private methods, but we can verify the expected behavior
 
@@ -105,12 +104,8 @@ class ZipHttpClientTest {
         assertTrue(true, "Range header formats are tested through integration");
     }
 
-    /**
-     * Integration test that demonstrates the retry logic configuration.
-     * This test shows that different retry configurations can be created.
-     */
     @Test
-    void testRetryConfiguration() {
+    void shouldCreateClientsWithDifferentRetryConfigurationsWhenConfigured() {
         // Test with different retry configurations
         ZipHttpClient noRetry = new ZipHttpClient(1, 100);
         ZipHttpClient fastRetry = new ZipHttpClient(3, 100);
@@ -126,11 +121,8 @@ class ZipHttpClientTest {
         slowRetry.close();
     }
 
-    /**
-     * Test to verify that ZipExtractionConfig constants are used properly.
-     */
     @Test
-    void testConfigurationConstants() {
+    void shouldHaveReasonableConfigurationConstantsWhenChecked() {
         // Verify that configuration constants have reasonable values
         assertTrue(ZipExtractionConfig.CONNECT_TIMEOUT_SECONDS > 0);
         assertTrue(ZipExtractionConfig.REQUEST_TIMEOUT_SECONDS > 0);
@@ -140,12 +132,8 @@ class ZipHttpClientTest {
         assertTrue(ZipExtractionConfig.FILE_FETCH_SAFETY_BUFFER >= 0);
     }
 
-    /**
-     * Mock-based test for successful HTTP operations.
-     * This test demonstrates the expected behavior without unnecessary stubbing.
-     */
     @Test
-    void testHttpOperationMocking() throws Exception {
+    void shouldMockHttpOperationWhenTested() throws Exception {
         // Create a test that shows how we would mock HTTP operations
         // This demonstrates the testing approach even if we can't fully mock the internal client
 
@@ -162,11 +150,8 @@ class ZipHttpClientTest {
         assertArrayEquals(testData, testResponse.body());
     }
 
-    /**
-     * Test for exception handling scenarios.
-     */
     @Test
-    void testExceptionScenarios() {
+    void shouldHandleExceptionScenariosWhenRetryLogicIsTriggered() {
         // Test various exception scenarios that would be handled by the retry logic
 
         // IOException scenarios (should trigger retry)
@@ -181,11 +166,8 @@ class ZipHttpClientTest {
         assertTrue(true, "Exception handling is verified through integration tests");
     }
 
-    /**
-     * Test HTTP status code validation logic.
-     */
     @Test
-    void testHttpStatusValidation() {
+    void shouldValidateHttpStatusCodesWhenChecked() {
         // Test the expected HTTP status codes that should be handled
 
         // Success case
@@ -205,11 +187,8 @@ class ZipHttpClientTest {
         }
     }
 
-    /**
-     * Test exponential backoff calculation logic.
-     */
     @Test
-    void testExponentialBackoffLogic() {
+    void shouldCalculateExponentialBackoffWhenRetrying() {
         // Test the exponential backoff formula: baseDelay * 2^(attempt-1)
         long baseDelay = 1000;
 
@@ -228,11 +207,8 @@ class ZipHttpClientTest {
         // This verifies the exponential backoff calculation used in the retry logic
     }
 
-    /**
-     * Integration test with a non-existent URL to test error handling.
-     */
     @Test
-    void testNonExistentUrl() {
+    void shouldThrowZipHttpExceptionWhenNonExistentUrlIsUsed() {
         String nonExistentUrl = "https://nonexistent.example.com/missing.zip";
 
         // This should eventually throw ZipHttpException after retries
@@ -241,11 +217,8 @@ class ZipHttpClientTest {
         });
     }
 
-    /**
-     * Test parameter validation for fetch methods.
-     */
     @Test
-    void testParameterValidation() {
+    void shouldThrowZipHttpExceptionWhenInvalidParametersAreUsed() {
         String validUrl = "https://example.com/test.zip";
 
         // Test negative sizes - should not throw at parameter level
@@ -260,40 +233,6 @@ class ZipHttpClientTest {
 
         assertThrows(ZipHttpException.class, () -> {
             zipHttpClient.fetchBytesAtOffset(validUrl, 0, -1);
-        });
-    }
-
-    /**
-     * Test thread safety considerations.
-     */
-    @Test
-    @Disabled
-    void testThreadSafety() {
-        // The ZipHttpClient should be thread-safe since HttpClient is thread-safe
-        // This test demonstrates concurrent usage
-
-        assertDoesNotThrow(() -> {
-            Thread thread1 = new Thread(() -> {
-                try {
-                    zipHttpClient.close();
-                } catch (Exception e) {
-                    // Expected for non-existent URL
-                }
-            });
-
-            Thread thread2 = new Thread(() -> {
-                try {
-                    zipHttpClient.close();
-                } catch (Exception e) {
-                    // Expected for non-existent URL
-                }
-            });
-
-            thread1.start();
-            thread2.start();
-
-            thread1.join();
-            thread2.join();
         });
     }
 }

@@ -1,17 +1,27 @@
 package com.http.request.utility;
 
+import static com.http.request.config.ZipExtractionConfig.CONNECT_TIMEOUT_SECONDS;
+import static com.http.request.config.ZipExtractionConfig.LAST_MEGABYTE_SIZE;
+import static com.http.request.config.ZipExtractionConfig.MAX_RETRY_ATTEMPTS;
+import static com.http.request.config.ZipExtractionConfig.REQUEST_TIMEOUT_SECONDS;
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.http.request.exceptions.ZipExtractionException;
+import com.http.request.exceptions.ZipHttpException;
 import com.http.request.http.ZipHttpClient;
 import com.http.request.models.CentralDirectoryInfo;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 
 class ZipExtractionIntegrationTest {
 
     private ZipExtraction zipExtraction;
     private final String testUrl = "https://example.com/test.zip";
+
+    @Mock
+    private ZipHttpClient zipHttpClient;
 
     @BeforeEach
     void setUp() {
@@ -46,7 +56,7 @@ class ZipExtractionIntegrationTest {
     }
 
     @Test
-    void shouldReturnCentralDirectoryContentsWhenApiCalled() {
+    void shouldReturnCentralDirectoryContentsWhenApiCalled() throws ZipHttpException {
         List<CentralDirectoryInfo> result = zipExtraction.getCentralDirectoryContents();
         assertNotNull(result);
         assertTrue(result instanceof List);
@@ -55,7 +65,7 @@ class ZipExtractionIntegrationTest {
     @Test
     void shouldThrowWhenGetFileGivenNonexistentFileName() {
         List<CentralDirectoryInfo> centralDir = zipExtraction.getCentralDirectoryContents();
-        assertThrows(IllegalArgumentException.class, () -> zipExtraction.getFile(centralDir, "nonexistent.txt"));
+        assertThrows(IllegalArgumentException.class, () -> zipExtraction.getFile("nonexistent.txt"));
     }
 
     @Test
@@ -107,23 +117,22 @@ class ZipExtractionIntegrationTest {
     }
 
     @Test
+    // @Refactor: Check the validity of configuration constants while construting ZipExtractionConfig
     void shouldHaveValidConfigurationConstants() {
-        assertTrue(com.http.request.config.ZipExtractionConfig.CONNECT_TIMEOUT_SECONDS > 0);
-        assertTrue(com.http.request.config.ZipExtractionConfig.REQUEST_TIMEOUT_SECONDS > 0);
-        assertTrue(com.http.request.config.ZipExtractionConfig.LAST_MEGABYTE_SIZE > 0);
-        assertTrue(com.http.request.config.ZipExtractionConfig.MAX_RETRY_ATTEMPTS >= 0);
+        assertTrue(CONNECT_TIMEOUT_SECONDS > 0);
+        assertTrue(REQUEST_TIMEOUT_SECONDS > 0);
+        assertTrue(LAST_MEGABYTE_SIZE > 0);
+        assertTrue(MAX_RETRY_ATTEMPTS >= 0);
     }
 
     @Test
     void shouldSupportExceptionHierarchy() {
         assertDoesNotThrow(() -> {
-            com.http.request.exceptions.ZipHttpException httpEx =
-                    new com.http.request.exceptions.ZipHttpException("Test HTTP error");
+            ZipHttpException httpEx = new ZipHttpException("Test HTTP error");
             assertNotNull(httpEx);
         });
         assertDoesNotThrow(() -> {
-            com.http.request.exceptions.ZipExtractionException zipEx =
-                    new com.http.request.exceptions.ZipExtractionException("Test ZIP error");
+            ZipExtractionException zipEx = new ZipExtractionException("Test ZIP error");
             assertNotNull(zipEx);
         });
     }
