@@ -63,13 +63,13 @@ class ZipExtractionIntegrationTest {
     }
 
     @Test
-    void shouldThrowWhenGetFileGivenNonexistentFileName() {
+    void shouldThrowWhenGetFileGivenNonexistentFileFromFileNameName() {
         List<CentralDirectoryInfo> centralDir = zipExtraction.getCentralDirectoryContents();
-        assertThrows(IllegalArgumentException.class, () -> zipExtraction.getFile("nonexistent.txt"));
+        assertThrows(IllegalArgumentException.class, () -> zipExtraction.getFileFromFileName("nonexistent.txt"));
     }
 
     @Test
-    void shouldReturnListOfFilesWhenGetAllFilesApiCalled() {
+    void shouldReturnListOfFilesWhenGetAllFileContentsApiCalled() {
         CentralDirectoryInfo dummyInfo = CentralDirectoryInfo.builder()
                 .fileName("test.txt")
                 .compressedSize(100)
@@ -80,7 +80,7 @@ class ZipExtractionIntegrationTest {
                 .commentLen(0)
                 .build();
         List<CentralDirectoryInfo> centralDirectoryList = List.of(dummyInfo);
-        List<List<Byte>> result = zipExtraction.getAllFiles(centralDirectoryList);
+        List<byte[]> result = zipExtraction.getAllFileContents();
         assertNotNull(result);
         assertTrue(result instanceof List);
     }

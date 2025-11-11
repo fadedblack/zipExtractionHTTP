@@ -12,26 +12,15 @@ import java.net.http.HttpResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class ZipHttpClientTest {
-
-    @Mock
-    private HttpClient mockHttpClient;
-
-    @Mock
-    private HttpResponse<byte[]> mockResponse;
-
     private ZipHttpClient zipHttpClient;
-    private final String testUrl = "https://example.com/test.zip";
     private final byte[] testData = "test data".getBytes();
 
     @BeforeEach
     void setUp() {
-        // Use reflection or constructor injection approach for testing
-        // For this test, we'll test the public interface behavior
         zipHttpClient = new ZipHttpClient();
     }
 
