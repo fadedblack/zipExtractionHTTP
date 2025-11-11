@@ -241,7 +241,7 @@ public final class ZipExtraction {
 
         while ((entry = zipInputStream.getNextEntry()) != null) {
             try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
-                byte[] buffer = new byte[8192];
+                byte[] buffer = new byte[8192]; // can the buffer overflow?
                 int bytesRead;
                 while ((bytesRead = zipInputStream.read(buffer)) != -1) {
                     byteArrayOutputStream.write(buffer, 0, bytesRead);
